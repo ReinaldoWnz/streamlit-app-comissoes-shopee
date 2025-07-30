@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+from tabulate import tabulate
 
 st.set_page_config(page_title="Análise de Comissões", layout="wide")
 
@@ -40,6 +41,26 @@ if arquivo is not None:
     
     st.metric("🧾 Total de Pedidos", total_pedidos)
     st.metric("💰 Comissão Total (R$)", f"{total_comissao:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+
+    top_categorias = df_filtrado.groupby("Categoria Global L2")[coluna_comissao].sum().sort_values(ascending=False).head(5)
+    print("\nTop 5 Categorias com mais comissão:")
+    print(top_categorias)
+
+    print("\nResumo estatístico da comissão líquida:")
+    print(f"- Média: R${df_filtrado[coluna_comissao].mean():.2f}")
+    print(f"- Mínima: R${df_filtrado[coluna_comissao].min():.2f}")
+    print(f"- Máxima: R${df_filtrado[coluna_comissao].max():.2f}")
+
+    print("\n--- Total por Canal ---")
+    canal_group = df_filtrado.groupby("Canal")[coluna_comissao].agg(['count', 'sum']).reset_index()
+    print(tabulate(canal_group, headers='keys', tablefmt='pretty', floatfmt=".2f"))
+
+    ver_grafico = input("Deseja visualizar gráfico por canal? (s/n): ").strip().lower()
+    if ver_grafico == 's':
+        canal_group.set_index("Canal")["sum"].sort_values().plot(kind="barh", title="Comissão por Canal")
+        plt.xlabel("Comissão R$")
+        plt.tight_layout()
+        plt.show()
 
     # Gráfico por status
     st.subheader("📈 Pedidos por Status")
