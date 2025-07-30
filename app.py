@@ -14,7 +14,11 @@ if arquivo:
 
     # Conversão de datas
     try:
-        df["Horário do pedido"] = pd.to_datetime(df["Horário do pedido"], format="%d/%m/%Y %H:%M")
+        df["Horário do pedido"] = pd.to_datetime(
+        df["Horário do pedido"],
+        errors="coerce",  # força erro a virar NaT
+        dayfirst=True      # garante que 01/02 seja 1º de fevereiro
+        )
     except:
         st.error("Erro ao converter a coluna 'Horário do pedido'. Verifique se o formato está como dia/mês/ano hora:minuto.")
         st.stop()
