@@ -93,6 +93,20 @@ if arquivo is not None:
         top_categorias.plot(kind="bar", ax=ax3, color="#FF8850")
         st.pyplot(fig3)
 
+tipo_grafico = st.radio("Escolha o tipo de gráfico", ("Barras", "Pizza"))
+
+# Exemplo para gráfico de Status do Pedido
+st.subheader("📈 Pedidos por Status")
+dados_status = df_filtrado["Status do Pedido"].value_counts().reset_index()
+dados_status.columns = ["Status", "Quantidade"]
+
+if tipo_grafico == "Barras":
+    fig = px.bar(dados_status, x="Status", y="Quantidade", color="Status", title="Pedidos por Status")
+else:
+    fig = px.pie(dados_status, names="Status", values="Quantidade", title="Pedidos por Status")
+
+st.plotly_chart(fig, use_container_width=True)
+    
     # Comparação entre períodos
     st.subheader("📅 Comparação entre dois períodos")
 
@@ -128,21 +142,6 @@ if arquivo is not None:
     })
 
     st.dataframe(comparacao)
-
-tipo_grafico = st.radio("Escolha o tipo de gráfico", ("Barras", "Pizza"))
-
-# Exemplo para gráfico de Status do Pedido
-st.subheader("📈 Pedidos por Status")
-dados_status = df_filtrado["Status do Pedido"].value_counts().reset_index()
-dados_status.columns = ["Status", "Quantidade"]
-
-if tipo_grafico == "Barras":
-    fig = px.bar(dados_status, x="Status", y="Quantidade", color="Status", title="Pedidos por Status")
-else:
-    fig = px.pie(dados_status, names="Status", values="Quantidade", title="Pedidos por Status")
-
-st.plotly_chart(fig, use_container_width=True)
-
 
 else:
     st.info("Por favor, envie um arquivo CSV para começar.")
