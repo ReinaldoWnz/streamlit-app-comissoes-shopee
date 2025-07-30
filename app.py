@@ -25,6 +25,22 @@ if arquivo:
 
     df["Comissão líquida do afiliado(R$)"] = df["Comissão líquida do afiliado(R$)"].astype(str).str.replace("R$", "", regex=False).str.replace(",", ".").astype(float)
 
+    #######
+    st.sidebar.markdown("### 🔍 Filtros")
+
+    # Exibir nomes de colunas reais no debug (pode ser temporário)
+    st.write("Colunas do CSV:", df.columns.tolist())
+    
+    # Tentar encontrar coluna semelhante a "Status do pedido"
+    col_status = next((col for col in df.columns if "status" in col.lower()), None)
+    
+    if col_status:
+        status = st.sidebar.multiselect("Status do pedido", df[col_status].dropna().unique())
+    else:
+        st.warning("⚠️ Coluna de status não encontrada no arquivo.")
+        status = []
+
+    
     # FILTROS
     st.sidebar.header("Filtros")
     status = st.sidebar.multiselect("Status do pedido", df["Status do pedido"].dropna().unique())
