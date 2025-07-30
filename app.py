@@ -13,7 +13,7 @@ if uploaded_file:
     df = pd.read_csv(uploaded_file)
 
     # Conversões
-    df["Horário do pedido"] = pd.to_datetime(df["Horário do pedido"], format="%d/%m/%Y %H:%M")
+    df["Horário do pedido"] = pd.to_datetime(df["Horário do pedido"], dayfirst=True, errors="coerce")
     df["Data do pedido"] = df["Horário do pedido"].dt.date
     coluna_comissao = "Comissão líquida do afiliado (R$)"
 
