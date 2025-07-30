@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import plotly.express as px
+
 
 st.set_page_config(page_title="Análise de Comissões", layout="wide")
 st.title("📊 Análise de Comissões de Afiliado")
@@ -126,6 +128,21 @@ if arquivo is not None:
     })
 
     st.dataframe(comparacao)
+
+tipo_grafico = st.radio("Escolha o tipo de gráfico", ("Barras", "Pizza"))
+
+# Exemplo para gráfico de Status do Pedido
+st.subheader("📈 Pedidos por Status")
+dados_status = df_filtrado["Status do Pedido"].value_counts().reset_index()
+dados_status.columns = ["Status", "Quantidade"]
+
+if tipo_grafico == "Barras":
+    fig = px.bar(dados_status, x="Status", y="Quantidade", color="Status", title="Pedidos por Status")
+else:
+    fig = px.pie(dados_status, names="Status", values="Quantidade", title="Pedidos por Status")
+
+st.plotly_chart(fig, use_container_width=True)
+
 
 else:
     st.info("Por favor, envie um arquivo CSV para começar.")
