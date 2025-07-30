@@ -30,7 +30,7 @@ if arquivo is not None:
 
     status = st.sidebar.multiselect("Status do Pedido", df["Status do Pedido"].dropna().unique())
     canal = st.sidebar.multiselect("Canal", df["Canal"].dropna().unique())
-    categoria = st.sidebar.multiselect("Categoria Global L1", df["Categoria Global L1"].dropna().unique())
+    categoria = st.sidebar.multiselect("Categoria Global L2", df["Categoria Global L2"].dropna().unique())
 
     st.sidebar.markdown("### 📅 Período Principal")
     data_inicio = st.sidebar.date_input("Data de início", df["Horário do pedido"].min().date(), key="inicio")
@@ -50,7 +50,7 @@ if arquivo is not None:
         if canal:
             df_filtrado = df_filtrado[df_filtrado["Canal"].isin(canal)]
         if categoria:
-            df_filtrado = df_filtrado[df_filtrado["Categoria Global L1"].isin(categoria)]
+            df_filtrado = df_filtrado[df_filtrado["Categoria Global L2"].isin(categoria)]
         return df_filtrado[
             (df_filtrado["Horário do pedido"].dt.date >= inicio) &
             (df_filtrado["Horário do pedido"].dt.date <= fim)
@@ -65,8 +65,8 @@ if arquivo is not None:
     total_pedidos = len(df_periodo)
     total_comissao = df_periodo[coluna_comissao].sum()
 
-    col1, col2 = st.columns(2)
-    col1.metric("🧾 Total de Pedidos", total_pedidos)
+    coL2, col2 = st.columns(2)
+    coL2.metric("🧾 Total de Pedidos", total_pedidos)
     col2.metric("💰 Comissão Total (R$)", f"{total_comissao:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
     st.divider()
@@ -75,7 +75,7 @@ if arquivo is not None:
     st.subheader("📈 Visualização de Dados")
 
     tipo_grafico = st.radio("Escolha o tipo de gráfico", ["Barras", "Pizza"], horizontal=True)
-    agrupamento = st.radio("Agrupar por", ["Status do Pedido", "Canal", "Categoria Global L1"], horizontal=True)
+    agrupamento = st.radio("Agrupar por", ["Status do Pedido", "Canal", "Categoria Global L2"], horizontal=True)
 
     df_agrupado = df_periodo.groupby(agrupamento)[coluna_comissao].sum().reset_index()
 
