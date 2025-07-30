@@ -1,98 +1,129 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from datetime import datetime
 
-st.set_page_config(page_title="Análise de Comissões - Shopee", layout="wide")
+st.set_page_config(page_title="Análise de Comissões Shopee", layout="wide")
 
-st.title("💰 Análise de Comissões - Shopee Afiliados")
+st.title("📊 Análise de Comissões Shopee")
 
-uploaded_file = st.file_uploader("📁 Faça upload do arquivo CSV exportado da Shopee", type=["csv"])
+# Upload do arquivo CSV
+arquivo = st.file_uploader("Selecione o arquivo CSV", type="csv")
 
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
+if arquivo:
+    df = pd.read_csv(arquivo)
 
-    # Conversões
-    df["Horário do pedido"] = pd.to_datetime(df["Horário do pedido"], dayfirst=True, errors="coerce")
-    df["Data do pedido"] = df["Horário do pedido"].dt.date
-    coluna_comissao = "Comissão líquida do afiliado (R$)"
+    # Conversão de datas
+    try:
+        df["Horário do pedido"] = pd.to_datetime(df["Horário do pedido"], format="%d/%m/%Y %H:%M")
+    except:
+        st.error("Erro ao converter a coluna 'Horário do pedido'. Verifique se o formato está como dia/mês/ano hora:minuto.")
+        st.stop()
 
-    # Filtros (lado a lado)
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        canais = st.multiselect("Canal", options=sorted(df["Canal"].unique()), default=[])
-    with col2:
-        status = st.multiselect("Status do Pedido", options=sorted(df["Status do Pedido"].unique()), default=[])
-    with col3:
-        categorias = st.multiselect("Categoria Global L2", options=sorted(df["Categoria Global L2"].unique()), default=[])
-    with col4:
-        datas = st.date_input("Período", [])
+    df["Comissão líquida do afiliado(R$)"] = df["Comissão líquida do afiliado(R$)"].astype(str).str.replace("R$", "", regex=False).str.replace(",", ".").astype(float)
 
-    # Aplicação dos filtros
+    # FILTROS
+    st.sidebar.header("Filtros")
+    status = st.sidebar.multiselect("Status do pedido", df["Status do pedido"].dropna().unique())
+    canal = st.sidebar.multiselect("Canal", df["Canal"].dropna().unique())
+    categoria = st.sidebar.multiselect("Categoria Global L2", df["Categoria Global L2"].dropna().unique())
+    data_inicio = st.sidebar.date_input("Data inicial", value=None)
+    data_fim = st.sidebar.date_input("Data final", value=None)
+
     df_filtrado = df.copy()
-    if canais:
-        df_filtrado = df_filtrado[df_filtrado["Canal"].isin(canais)]
-    if status:
-        df_filtrado = df_filtrado[df_filtrado["Status do Pedido"].isin(status)]
-    if categorias:
-        df_filtrado = df_filtrado[df_filtrado["Categoria Global L2"].isin(categorias)]
-    if len(datas) == 2:
-        df_filtrado = df_filtrado[(df_filtrado["Data do pedido"] >= datas[0]) & (df_filtrado["Data do pedido"] <= datas[1])]
 
-    st.markdown("---")
-    st.subheader("📊 Gráficos interativos")
+    if status:
+        df_filtrado = df_filtrado[df_filtrado["Status do pedido"].isin(status)]
+    if canal:
+        df_filtrado = df_filtrado[df_filtrado["Canal"].isin(canal)]
+    if categoria:
+        df_filtrado = df_filtrado[df_filtrado["Categoria Global L2"].isin(categoria)]
+    if data_inicio:
+        df_filtrado = df_filtrado[df_filtrado["Horário do pedido"] >= pd.to_datetime(data_inicio)]
+    if data_fim:
+        df_filtrado = df_filtrado[df_filtrado["Horário do pedido"] <= pd.to_datetime(data_fim)]
+
+    st.divider()
+
+    # Se não houver dados
+    if df_filtrado.empty:
+        st.warning("Nenhum dado encontrado com os filtros selecionados.")
+        st.stop()
+    else:
+        st.success(f"{len(df_filtrado)} registros encontrados.")
+
+    # MÉTRICAS RESUMO
+    total_pedidos = len(df_filtrado)
+    total_comissao = df_filtrado["Comissão líquida do afiliado(R$)"].sum()
+
+    col1, col2 = st.columns(2)
+    col1.metric("🧾 Total de Pedidos", total_pedidos)
+    col2.metric("💰 Comissão Total (R$)", f"{total_comissao:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+
+    st.divider()
+
+    # CONFIGURAÇÃO DO GRÁFICO
+    st.subheader("📈 Visualização de Dados")
 
     col_tipo, col_agrupamento = st.columns(2)
-    with col_tipo:
-        tipo_grafico = st.radio("Tipo de gráfico", ["Barras", "Pizza"], horizontal=True)
-    with col_agrupamento:
-        opcao_agrupamento = st.radio(
-            "Agrupar por",
-            ["Status do Pedido", "Canal", "Categoria Global L2"],
-            horizontal=True
+
+    tipo_grafico = col_tipo.radio("Tipo de Gráfico", ["Barras", "Pizza"], horizontal=True)
+    opcao_agrupamento = col_agrupamento.radio("Agrupar por", ["Status do pedido", "Canal", "Categoria Global L2"], horizontal=True)
+
+    coluna_comissao = "Comissão líquida do afiliado(R$)"
+
+    if opcao_agrupamento not in df_filtrado.columns:
+        st.error(f"A coluna '{opcao_agrupamento}' não foi encontrada no arquivo.")
+        st.stop()
+
+    df_agrupado = df_filtrado.groupby(opcao_agrupamento)[coluna_comissao].sum().reset_index()
+    df_agrupado = df_agrupado.sort_values(by=coluna_comissao, ascending=False)
+
+    if tipo_grafico == "Barras":
+        fig = px.bar(
+            df_agrupado,
+            x=opcao_agrupamento,
+            y=coluna_comissao,
+            text=coluna_comissao,
+            labels={coluna_comissao: "Comissão (R$)"},
+            color=opcao_agrupamento
         )
-
-    if not df_filtrado.empty:
-        df_agrupado = df_filtrado.groupby(opcao_agrupamento)[coluna_comissao].sum().reset_index()
-
-        if tipo_grafico == "Barras":
-            fig = px.bar(
-                df_agrupado,
-                x=opcao_agrupamento,
-                y=coluna_comissao,
-                color=opcao_agrupamento,
-                text_auto=".2s",
-                title=f"Comissões por {opcao_agrupamento}"
-            )
-        else:
-            fig = px.pie(
-                df_agrupado,
-                names=opcao_agrupamento,
-                values=coluna_comissao,
-                hole=0.4,
-                title=f"Comissões por {opcao_agrupamento}"
-            )
-
+        fig.update_traces(texttemplate="R$ %{text:.2f}", textposition="outside")
+        fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
         st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.warning("⚠️ Nenhum dado encontrado com os filtros aplicados.")
 
-    st.markdown("---")
+    elif tipo_grafico == "Pizza":
+        fig = px.pie(
+            df_agrupado,
+            values=coluna_comissao,
+            names=opcao_agrupamento,
+            hole=0.4
+        )
+        fig.update_traces(textposition='inside', textinfo='percent+label')
+        st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
+
+    # COMPARAÇÃO ENTRE PERÍODOS
     st.subheader("📅 Comparação entre dois períodos")
 
-    col_a, col_b = st.columns(2)
-    with col_a:
-        periodo_1 = st.date_input("Período 1", key="p1", value=[])
-    with col_b:
-        periodo_2 = st.date_input("Período 2", key="p2", value=[])
+    col_data1, col_data2 = st.columns(2)
+    with col_data1:
+        inicio1 = st.date_input("Início período 1", key="inicio1")
+        fim1 = st.date_input("Fim período 1", key="fim1")
+    with col_data2:
+        inicio2 = st.date_input("Início período 2", key="inicio2")
+        fim2 = st.date_input("Fim período 2", key="fim2")
 
-    if len(periodo_1) == 2 and len(periodo_2) == 2:
-        df_p1 = df[(df["Data do pedido"] >= periodo_1[0]) & (df["Data do pedido"] <= periodo_1[1])]
-        df_p2 = df[(df["Data do pedido"] >= periodo_2[0]) & (df["Data do pedido"] <= periodo_2[1])]
+    if inicio1 and fim1 and inicio2 and fim2:
+        periodo1 = df_filtrado[(df_filtrado["Horário do pedido"] >= pd.to_datetime(inicio1)) & (df_filtrado["Horário do pedido"] <= pd.to_datetime(fim1))]
+        periodo2 = df_filtrado[(df_filtrado["Horário do pedido"] >= pd.to_datetime(inicio2)) & (df_filtrado["Horário do pedido"] <= pd.to_datetime(fim2))]
 
-        total_1 = df_p1[coluna_comissao].sum()
-        total_2 = df_p2[coluna_comissao].sum()
+        total1 = periodo1[coluna_comissao].sum()
+        total2 = periodo2[coluna_comissao].sum()
 
         col1, col2 = st.columns(2)
-        col1.metric("Total comissão período 1", f"R${total_1:,.2f}")
-        col2.metric("Total comissão período 2", f"R${total_2:,.2f}", delta=f"R${(total_2 - total_1):,.2f}")
+        col1.metric("💵 Comissão Período 1", f"R$ {total1:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        col2.metric("💵 Comissão Período 2", f"R$ {total2:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+
+else:
+    st.info("Por favor, envie um arquivo CSV para começar.")
