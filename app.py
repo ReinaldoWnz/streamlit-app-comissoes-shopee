@@ -28,13 +28,13 @@ if arquivo is not None:
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        status_selecionado = st.multiselect("Status do Pedido", opcoes_status, default=opcoes_status)
+        status_selecionado = st.multiselect("Status do Pedido", opcoes_status)
 
     with col2:
-        canais_selecionados = st.multiselect("Canal", opcoes_canais, default=opcoes_canais)
+        canais_selecionados = st.multiselect("Canal", opcoes_canais)
 
     with col3:
-        categorias_selecionadas = st.multiselect("Categoria Global L2", opcoes_categorias, default=opcoes_categorias)
+        categorias_selecionadas = st.multiselect("Categoria Global L2", opcoes_categorias)
 
     # Filtros de data
     col4, col5 = st.columns(2)
@@ -42,6 +42,14 @@ if arquivo is not None:
         data_inicio = st.date_input("Data inicial", df["Horário do pedido"].min().date())
     with col5:
         data_fim = st.date_input("Data final", df["Horário do pedido"].max().date())
+
+    # Se nenhum filtro for selecionado, usar todos os valores
+    if not status_selecionado:
+        status_selecionado = opcoes_status
+    if not canais_selecionados:
+        canais_selecionados = opcoes_canais
+    if not categorias_selecionadas:
+        categorias_selecionadas = opcoes_categorias
 
     # Aplicar filtros
     df_filtrado = df[
@@ -52,33 +60,36 @@ if arquivo is not None:
         (df["Horário do pedido"].dt.date <= data_fim)
     ]
 
-    # Métricas
-    total_pedidos = len(df_filtrado)
-    total_comissao = df_filtrado[coluna_comissao].sum()
+    if df_filtrado.empty:
+        st.warning("Nenhum dado encontrado com os filtros aplicados.")
+    else:
+        # Métricas
+        total_pedidos = len(df_filtrado)
+        total_comissao = df_filtrado[coluna_comissao].sum()
 
-    st.metric("🧾 Total de Pedidos", total_pedidos)
-    st.metric("💰 Comissão Total (R$)", f"{total_comissao:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        st.metric("🧾 Total de Pedidos", total_pedidos)
+        st.metric("💰 Comissão Total (R$)", f"{total_comissao:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
-    # Gráfico por Status
-    st.subheader("📈 Pedidos por Status")
-    grafico_status = df_filtrado["Status do Pedido"].value_counts()
-    fig1, ax1 = plt.subplots(figsize=(10, 4))
-    grafico_status.plot(kind="bar", ax=ax1, color="#6C5DD3")
-    st.pyplot(fig1)
+        # Gráfico por Status
+        st.subheader("📈 Pedidos por Status")
+        grafico_status = df_filtrado["Status do Pedido"].value_counts()
+        fig1, ax1 = plt.subplots(figsize=(10, 4))
+        grafico_status.plot(kind="bar", ax=ax1, color="#6C5DD3")
+        st.pyplot(fig1)
 
-    # Gráfico por Canal
-    st.subheader("📊 Pedidos por Canal")
-    grafico_canal = df_filtrado["Canal"].value_counts()
-    fig2, ax2 = plt.subplots(figsize=(10, 4))
-    grafico_canal.plot(kind="bar", ax=ax2, color="#00C49F")
-    st.pyplot(fig2)
+        # Gráfico por Canal
+        st.subheader("📊 Pedidos por Canal")
+        grafico_canal = df_filtrado["Canal"].value_counts()
+        fig2, ax2 = plt.subplots(figsize=(10, 4))
+        grafico_canal.plot(kind="bar", ax=ax2, color="#00C49F")
+        st.pyplot(fig2)
 
-    # Top categorias por comissão
-    st.subheader("🏆 Top 5 Categorias por Comissão")
-    top_categorias = df_filtrado.groupby("Categoria Global L2")[coluna_comissao].sum().sort_values(ascending=False).head(5)
-    fig3, ax3 = plt.subplots(figsize=(10, 4))
-    top_categorias.plot(kind="bar", ax=ax3, color="#FF8850")
-    st.pyplot(fig3)
+        # Top categorias por comissão
+        st.subheader("🏆 Top 5 Categorias por Comissão")
+        top_categorias = df_filtrado.groupby("Categoria Global L2")[coluna_comissao].sum().sort_values(ascending=False).head(5)
+        fig3, ax3 = plt.subplots(figsize=(10, 4))
+        top_categorias.plot(kind="bar", ax=ax3, color="#FF8850")
+        st.pyplot(fig3)
 
     # Comparação entre períodos
     st.subheader("📅 Comparação entre dois períodos")
