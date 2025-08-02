@@ -16,11 +16,15 @@ if arquivo is not None:
         st.stop()
 
     try:
-        df["Horário do pedido"] = pd.to_datetime(df["Horário do pedido"], dayfirst=True, errors="coerce")
+        df["Horário do pedido"] = pd.to_datetime(df["Horário do pedido"], errors="coerce")
     except:
         st.error("Erro ao converter a coluna 'Horário do pedido'. Verifique o formato.")
         st.stop()
 
+    datas_invalidas = df["Horário do pedido"].isna().sum()
+    if datas_invalidas > 0:
+        st.warning(f"{datas_invalidas} registros têm datas inválidas e foram ignorados.")
+    
     # Conversão da comissão
     coluna_comissao = "Comissão líquida do afiliado(R$)"
     df[coluna_comissao] = df[coluna_comissao].astype(str).str.replace("R$", "", regex=False).str.replace(",", ".").astype(float)
