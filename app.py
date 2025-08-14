@@ -15,19 +15,33 @@ if arquivo is not None:
         st.error(f"Erro ao ler o arquivo: {e}")
         st.stop()
 
+    # Escolha do tipo de data para análise
+    tipo_data = st.sidebar.radio(
+        "📅 Escolher tipo de data para filtro",
+        ["Horário do pedido", "Tempo de Conclusão"]
+    )
+
     try:
         df["Horário do pedido"] = pd.to_datetime(df["Horário do pedido"], errors="coerce")
+        df["Tempo de Conclusão"] = pd.to_datetime(df["Tempo de Conclusão"], errors="coerce")
     except:
-        st.error("Erro ao converter a coluna 'Horário do pedido'. Verifique o formato.")
+        st.error("Erro ao converter as colunas de data. Verifique o formato.")
         st.stop()
 
-    datas_invalidas = df["Horário do pedido"].isna().sum()
+    # Aviso se houver datas inválidas
+    datas_invalidas = df[tipo_data].isna().sum()
     if datas_invalidas > 0:
-        st.warning(f"{datas_invalidas} registros têm datas inválidas e foram ignorados.")
-    
+        st.warning(f"{datas_invalidas} registros têm '{tipo_data}' inválidos e foram ignorados.")
+
     # Conversão da comissão
     coluna_comissao = "Comissão líquida do afiliado(R$)"
-    df[coluna_comissao] = df[coluna_comissao].astype(str).str.replace("R$", "", regex=False).str.replace(",", ".").astype(float)
+    df[coluna_comissao] = (
+        df[coluna_comissao]
+        .astype(str)
+        .str.replace("R$", "", regex=False)
+        .str.replace(",", ".")
+        .astype(float)
+    )
 
     # Filtros principais
     st.sidebar.markdown("### 🔍 Filtros")
@@ -36,17 +50,17 @@ if arquivo is not None:
     canal = st.sidebar.multiselect("Canal", df["Canal"].dropna().unique())
     categoria = st.sidebar.multiselect("Categoria Global L2", df["Categoria Global L2"].dropna().unique())
 
-    st.sidebar.markdown("### 📅 Período Principal")
-    data_inicio = st.sidebar.date_input("Data de início", df["Horário do pedido"].min().date(), key="inicio")
-    data_fim = st.sidebar.date_input("Data de fim", df["Horário do pedido"].max().date(), key="fim")
+    st.sidebar.markdown(f"### 📅 Período Principal ({tipo_data})")
+    data_inicio = st.sidebar.date_input("Data de início", df[tipo_data].min().date(), key="inicio")
+    data_fim = st.sidebar.date_input("Data de fim", df[tipo_data].max().date(), key="fim")
 
     st.sidebar.markdown("### 📅 Período de Comparação")
     comparar = st.sidebar.checkbox("Ativar comparação com outro período")
     if comparar:
-        data_inicio_comp = st.sidebar.date_input("Início (comparação)", df["Horário do pedido"].min().date(), key="inicio_comp")
-        data_fim_comp = st.sidebar.date_input("Fim (comparação)", df["Horário do pedido"].max().date(), key="fim_comp")
+        data_inicio_comp = st.sidebar.date_input("Início (comparação)", df[tipo_data].min().date(), key="inicio_comp")
+        data_fim_comp = st.sidebar.date_input("Fim (comparação)", df[tipo_data].max().date(), key="fim_comp")
 
-    # Aplicar filtros principais
+    # Função para filtrar dados
     def filtrar(df, inicio, fim):
         df_filtrado = df.copy()
         if status:
@@ -56,16 +70,18 @@ if arquivo is not None:
         if categoria:
             df_filtrado = df_filtrado[df_filtrado["Categoria Global L2"].isin(categoria)]
         return df_filtrado[
-            (df_filtrado["Horário do pedido"].dt.date >= inicio) &
-            (df_filtrado["Horário do pedido"].dt.date <= fim)
+            (df_filtrado[tipo_data].dt.date >= inicio) &
+            (df_filtrado[tipo_data].dt.date <= fim)
         ]
 
+    # Dados filtrados para o período principal
     df_periodo = filtrar(df, data_inicio, data_fim)
 
     if df_periodo.empty:
         st.warning("Nenhum dado encontrado no período principal com os filtros selecionados.")
         st.stop()
 
+    # Métricas principais
     total_pedidos = len(df_periodo)
     total_comissao = df_periodo[coluna_comissao].sum()
 
@@ -93,28 +109,5 @@ if arquivo is not None:
         fig.update_layout(height=500)
         st.plotly_chart(fig, use_container_width=True)
 
-    # Gráfico de comparação
+    # Comparação de períodos
     if comparar:
-        st.divider()
-        st.subheader("📊 Comparação Entre Períodos")
-
-        df_comparado = filtrar(df, data_inicio_comp, data_fim_comp)
-        if df_comparado.empty:
-            st.warning("Nenhum dado encontrado no período de comparação.")
-        else:
-            df1 = df_periodo.groupby(agrupamento)[coluna_comissao].sum().reset_index()
-            df1["Período"] = "Atual"
-            df2 = df_comparado.groupby(agrupamento)[coluna_comissao].sum().reset_index()
-            df2["Período"] = "Comparação"
-            df_comp = pd.concat([df1, df2])
-
-            fig_comp = px.bar(
-                df_comp,
-                x=agrupamento,
-                y=coluna_comissao,
-                color="Período",
-                barmode="group",
-                title=f"Comparação de Comissão por {agrupamento}"
-            )
-            fig_comp.update_layout(height=500)
-            st.plotly_chart(fig_comp, use_container_width=True)
