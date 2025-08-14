@@ -21,9 +21,12 @@ if arquivo is not None:
         ["Horário do pedido", "Tempo de Conclusão"]
     )
 
+    # Conversão das duas colunas para datetime
     try:
-        df["Horário do pedido"] = pd.to_datetime(df["Horário do pedido"], errors="coerce")
-        df["Tempo de Conclusão"] = pd.to_datetime(df["Tempo de Conclusão"], errors="coerce")
+        if "Horário do pedido" in df.columns:
+            df["Horário do pedido"] = pd.to_datetime(df["Horário do pedido"], errors="coerce")
+        if "Tempo de Conclusão" in df.columns:
+            df["Tempo de Conclusão"] = pd.to_datetime(df["Tempo de Conclusão"], errors="coerce")
     except:
         st.error("Erro ao converter as colunas de data. Verifique o formato.")
         st.stop()
@@ -35,17 +38,20 @@ if arquivo is not None:
 
     # Conversão da comissão
     coluna_comissao = "Comissão líquida do afiliado(R$)"
-    df[coluna_comissao] = (
-        df[coluna_comissao]
-        .astype(str)
-        .str.replace("R$", "", regex=False)
-        .str.replace(",", ".")
-        .astype(float)
-    )
+    if coluna_comissao in df.columns:
+        df[coluna_comissao] = (
+            df[coluna_comissao]
+            .astype(str)
+            .str.replace("R$", "", regex=False)
+            .str.replace(",", ".")
+            .astype(float)
+        )
+    else:
+        st.error(f"Coluna '{coluna_comissao}' não encontrada no CSV.")
+        st.stop()
 
     # Filtros principais
     st.sidebar.markdown("### 🔍 Filtros")
-
     status = st.sidebar.multiselect("Status do Pedido", df["Status do Pedido"].dropna().unique())
     canal = st.sidebar.multiselect("Canal", df["Canal"].dropna().unique())
     categoria = st.sidebar.multiselect("Categoria Global L2", df["Categoria Global L2"].dropna().unique())
@@ -111,3 +117,26 @@ if arquivo is not None:
 
     # Comparação de períodos
     if comparar:
+        st.divider()
+        st.subheader("📊 Comparação Entre Períodos")
+
+        df_comparado = filtrar(df, data_inicio_comp, data_fim_comp)
+        if df_comparado.empty:
+            st.warning("Nenhum dado encontrado no período de comparação.")
+        else:
+            df1 = df_periodo.groupby(agrupamento)[coluna_comissao].sum().reset_index()
+            df1["Período"] = "Atual"
+            df2 = df_comparado.groupby(agrupamento)[coluna_comissao].sum().reset_index()
+            df2["Período"] = "Comparação"
+            df_comp = pd.concat([df1, df2])
+
+            fig_comp = px.bar(
+                df_comp,
+                x=agrupamento,
+                y=coluna_comissao,
+                color="Período",
+                barmode="group",
+                title=f"Comparação de Comissão por {agrupamento}"
+            )
+            fig_comp.update_layout(height=500)
+            st.plotly_chart(fig_comp, use_container_width=True)
