@@ -44,13 +44,6 @@ if arquivo is not None:
     st.sidebar.markdown("---")
     st.sidebar.header("🔍 Filtros de Análise")
 
-    # O resto do seu código de filtros e visualização fica aqui dentro
-    # Escolha do tipo de data para análise
-    tipo_data = st.sidebar.radio(
-        "📅 Escolher tipo de data para filtro",
-        ["Horário do pedido", "Tempo de Conclusão"]
-    )
-
     # Conversão das duas colunas para datetime
     try:
         if "Horário do pedido" in df.columns:
@@ -60,11 +53,6 @@ if arquivo is not None:
     except:
         st.error("Erro ao converter as colunas de data. Verifique o formato.")
         st.stop()
-
-    # Aviso se houver datas inválidas
-    datas_invalidas = df[tipo_data].isna().sum()
-    if datas_invalidas > 0:
-        st.warning(f"{datas_invalidas} registros têm '{tipo_data}' inválidos e foram ignorados.")
 
     # Conversão da comissão
     coluna_comissao = "Comissão líquida do afiliado(R$)"
@@ -79,65 +67,91 @@ if arquivo is not None:
     else:
         st.error(f"Coluna '{coluna_comissao}' não encontrada no CSV.")
         st.stop()
-
-    # Filtros principais
-    st.sidebar.markdown("### 🔍 Filtros")
+    
+    # --- Filtros de data separados na barra lateral ---
+    st.sidebar.markdown("### 📅 Filtro para Status 'Concluído'")
+    data_inicio_concluido = st.sidebar.date_input(
+        "Data de início (Concluído)", 
+        df["Tempo de Conclusão"].min().date() if pd.notna(df["Tempo de Conclusão"].min()) else pd.Timestamp.now().date(),
+        key="inicio_concluido"
+    )
+    data_fim_concluido = st.sidebar.date_input(
+        "Data de fim (Concluído)", 
+        df["Tempo de Conclusão"].max().date() if pd.notna(df["Tempo de Conclusão"].max()) else pd.Timestamp.now().date(),
+        key="fim_concluido"
+    )
+    
+    st.sidebar.markdown("### 📅 Filtro para Outros Status")
+    data_inicio_outros = st.sidebar.date_input(
+        "Data de início (Pendente, Não Pago, Cancelado)", 
+        df["Horário do pedido"].min().date() if pd.notna(df["Horário do pedido"].min()) else pd.Timestamp.now().date(),
+        key="inicio_outros"
+    )
+    data_fim_outros = st.sidebar.date_input(
+        "Data de fim (Pendente, Não Pago, Cancelado)", 
+        df["Horário do pedido"].max().date() if pd.notna(df["Horário do pedido"].max()) else pd.Timestamp.now().date(),
+        key="fim_outros"
+    )
+    
+    # --- Filtros de canal e categoria aplicados a todos os dados ---
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 🔍 Outros Filtros")
     canal = st.sidebar.multiselect("Canal", df["Canal"].dropna().unique())
     categoria = st.sidebar.multiselect("Categoria Global L2", df["Categoria Global L2"].dropna().unique())
 
-    st.sidebar.markdown(f"### 📅 Período Principal ({tipo_data})")
-    data_inicio = st.sidebar.date_input("Data de início", df[tipo_data].min().date(), key="inicio")
-    data_fim = st.sidebar.date_input("Data de fim", df[tipo_data].max().date(), key="fim")
 
-    st.sidebar.markdown("### 📅 Período de Comparação")
-    comparar = st.sidebar.checkbox("Ativar comparação com outro período")
-    if comparar:
-        data_inicio_comp = st.sidebar.date_input("Início (comparação)", df[tipo_data].min().date(), key="inicio_comp")
-        data_fim_comp = st.sidebar.date_input("Fim (comparação)", df[tipo_data].max().date(), key="fim_comp")
-
-    # --- Conteúdo da Página Principal (Gráficos e Métricas) ---
-    # Função para filtrar dados
-    def filtrar(df, inicio, fim):
-        df_filtrado = df.copy()
+    # --- Função para filtrar dados ---
+    def filtrar_df(df_base, inicio, fim, coluna_data, canal, categoria):
+        df_filtrado = df_base.copy()
+        
+        # Filtro de Canal
         if canal:
             df_filtrado = df_filtrado[df_filtrado["Canal"].isin(canal)]
+        
+        # Filtro de Categoria
         if categoria:
             df_filtrado = df_filtrado[df_filtrado["Categoria Global L2"].isin(categoria)]
+
+        # Filtro de Data
         return df_filtrado[
-            (df_filtrado[tipo_data].dt.date >= inicio) &
-            (df_filtrado[tipo_data].dt.date <= fim)
+            (df_filtrado[coluna_data].dt.date >= inicio) &
+            (df_filtrado[coluna_data].dt.date <= fim)
         ]
 
-    # Dados filtrados para o período principal
-    df_periodo = filtrar(df, data_inicio, data_fim)
+    # Dividir o DataFrame por status
+    df_concluido_base = df[df["Status do Pedido"].str.contains("conclu", case=False, na=False)]
+    df_outros_base = df[~df["Status do Pedido"].str.contains("conclu", case=False, na=False)]
 
+    # Aplicar os filtros de data específicos a cada sub-DataFrame
+    df_concluido_filtrado = filtrar_df(df_concluido_base, data_inicio_concluido, data_fim_concluido, "Tempo de Conclusão", canal, categoria)
+    df_outros_filtrado = filtrar_df(df_outros_base, data_inicio_outros, data_fim_outros, "Horário do pedido", canal, categoria)
+
+    # Combinar os DataFrames filtrados
+    df_periodo = pd.concat([df_concluido_filtrado, df_outros_filtrado])
+    
     if df_periodo.empty:
-        st.warning("Nenhum dado encontrado no período principal com os filtros selecionados.")
+        st.warning("Nenhum dado encontrado com os filtros selecionados.")
         st.stop()
 
     # ======================
-    # 🔹 NOVA SEÇÃO: Resumo por Status
+    # 🔹 SEÇÃO: Resumo por Status
     # ======================
     st.subheader("📌 Resumo por Status")
-    
+
     status_resumo = {
         "Pendente": df_periodo[df_periodo["Status do Pedido"].str.contains("endente", case=False, na=False)],
         "Concluído": df_periodo[df_periodo["Status do Pedido"].str.contains("conclu", case=False, na=False)],
         "Não Pago": df_periodo[df_periodo["Status do Pedido"].str.contains("não pago|nao pago", case=False, na=False)],
         "Cancelado": df_periodo[df_periodo["Status do Pedido"].str.contains("cancel", case=False, na=False)],
     }
-    
+
     col1, col2, col3, col4 = st.columns(4)
     for i, (nome, df_status) in enumerate(status_resumo.items()):
         qtd = len(df_status)
         total = df_status[coluna_comissao].sum()
-    
-        # Formatação do valor para exibir a moeda e a quantidade
         valor_formatado = f"R$ {total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-        quantidade_formatada = f"Pedidos: {qtd}" # Adicionado "Pedidos:" para clareza
-        quantidade_formatada_diff = f"{qtd}" # Apenas para Não pago e cancelado
-
-    
+        quantidade_formatada = f"Pedidos: {qtd}"
+        
         if i == 0:
             col1.metric(f"📌 {nome}", valor_formatado, quantidade_formatada)
         elif i == 1:
@@ -146,7 +160,7 @@ if arquivo is not None:
             col3.metric(f"📌 {nome}", quantidade_formatada_diff)
         else:
             col4.metric(f"📌 {nome}", quantidade_formatada_diff)
-    
+
     st.divider()
 
     # Gráficos principais
@@ -167,31 +181,6 @@ if arquivo is not None:
         fig.update_layout(height=500)
         st.plotly_chart(fig, use_container_width=True)
 
-    # Comparação de períodos
-    if comparar:
-        st.divider()
-        st.subheader("📊 Comparação Entre Períodos")
-
-        df_comparado = filtrar(df, data_inicio_comp, data_fim_comp)
-        if df_comparado.empty:
-            st.warning("Nenhum dado encontrado no período de comparação.")
-        else:
-            df1 = df_periodo.groupby(agrupamento)[coluna_comissao].sum().reset_index()
-            df1["Período"] = "Atual"
-            df2 = df_comparado.groupby(agrupamento)[coluna_comissao].sum().reset_index()
-            df2["Período"] = "Comparação"
-            df_comp = pd.concat([df1, df2])
-
-            fig_comp = px.bar(
-                df_comp,
-                x=agrupamento,
-                y=coluna_comissao,
-                color="Período",
-                barmode="group",
-                title=f"Comparação de Comissão por {agrupamento}"
-            )
-            fig_comp.update_layout(height=500)
-            st.plotly_chart(fig_comp, use_container_width=True)
 else:
     # Mensagem de instrução quando nenhum arquivo é upado
     st.info("⬆️ **Por favor, faça o upload de um arquivo CSV da Shopee na barra lateral para começar a análise.**")
