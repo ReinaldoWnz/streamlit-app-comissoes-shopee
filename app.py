@@ -170,13 +170,13 @@ if arquivo is not None:
     
     # Exibir a primeira linha de cartões (principais)
     col1, col2, col3 = st.columns(3)
-    col1.metric("📌 Concluído {data_concluido_str}", valor_concluido_formatado, f"Pedidos: {len(status_resumo['Concluído'])}")
+    col1.metric(f"📌 Concluído {data_concluido_str}", valor_concluido_formatado, f"Pedidos: {len(status_resumo['Concluído'])}")
     col2.metric("📌 Total Estimado", valor_estimado_formatado, help="Soma dos valores Pendentes e Concluídos.")
     col3.metric("📌 Não Pago", f"{len(status_resumo['Não Pago'])} pedidos")
 
     # Exibir a segunda linha de cartões (secundários)
     col4, col5, col6 = st.columns([1, 1, 1])
-    col4.metric("📌 Pendente {data_outros_str}", valor_pendente_formatado, f"Pedidos: {len(status_resumo['Pendente'])}")
+    col4.metric(f"📌 Pendente {data_outros_str}", valor_pendente_formatado, f"Pedidos: {len(status_resumo['Pendente'])}")
     col5.metric("📌 Total Estimado Líquido", valor_estimado_liquido_formatado, help="Soma dos valores Pendentes e Concluídos com 11% subtraído.")
     col6.metric("📌 Cancelado", f"{len(status_resumo['Cancelado'])} pedidos")
 
