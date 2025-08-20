@@ -5,8 +5,20 @@ import plotly.express as px
 st.set_page_config(page_title="Análise de Comissões", layout="wide")
 st.title("📊 Painel de Análise de Comissões - Shopee Afiliados")
 
+# --- CSS para esconder o texto "Drag and drop file here" ---
+st.markdown(
+    """
+    <style>
+    .st-emotion-cache-1c7y2o4 {
+        visibility: hidden;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # --- Texto + Upload lado a lado ---
-col1, col2 = st.columns([4,1])  # proporção: texto maior, botão menor
+col1, col2 = st.columns([4,1])
 
 with col1:
     st.markdown(
@@ -21,6 +33,14 @@ with col1:
 with col2:
     arquivo = st.file_uploader("", type=["csv"], label_visibility="collapsed")
 
+# --- Processamento do CSV ---
+if arquivo is not None:
+    try:
+        df = pd.read_csv(arquivo)
+        st.success(f"✅ Arquivo carregado: **{arquivo.name}**")
+    except Exception as e:
+        st.error(f"Erro ao ler o arquivo: {e}")
+        st.stop()
 # --- Processamento do CSV ---
 if arquivo is not None:
     try:
