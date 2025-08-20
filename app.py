@@ -35,9 +35,9 @@ arquivo = st.sidebar.file_uploader(" ", type=["csv"], label_visibility="collapse
 if arquivo is not None:
     try:
         df = pd.read_csv(arquivo)
-        st.success(f"✅ Arquivo carregado: **{arquivo.name}**")
+        st.sidebar.success(f"✅ Arquivo carregado: **{arquivo.name}**")
     except Exception as e:
-        st.error(f"Erro ao ler o arquivo: {e}")
+        st.sidebar.error(f"Erro ao ler o arquivo: {e}")
         st.stop()
 
     # --- Conteúdo da Barra Lateral (Filtros) ---
