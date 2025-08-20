@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import streamlit_image_export   # Importação da biblioteca
 
 st.set_page_config(page_title="Análise de Comissões", layout="wide")
 st.title("📊 Painel de Análise de Comissões - Shopee Afiliados")
@@ -234,15 +233,6 @@ if arquivo is not None:
 
     img_bytes = pio.to_image(fig, format="png")
 
-    # Botão de exportação da imagem (fora do contêiner, mas ainda dentro do if)
-    st_image_export_button(
-        "📥 Salvar Painel como Imagem",
-        "painel-principal",
-        filename="painel_analise_shopee",
-        file_format="png",
-        button_label="📥 Salvar Painel como Imagem",
-        key="export_button"
-    )
 
 else:
     # Mensagem de instrução quando nenhum arquivo é upado
