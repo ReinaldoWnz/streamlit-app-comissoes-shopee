@@ -17,27 +17,33 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- Barra Lateral ---
-st.sidebar.header("📁 Upload de Arquivo")
-st.sidebar.markdown(
-    """
-    <p style="font-size:14px; margin-top: -10px; margin-bottom: 10px;">
-    Faça upload do arquivo CSV exportado da Shopee.
-    </p>
-    """,
-    unsafe_allow_html=True
-)
+# --- Criar um placeholder para o contêiner de upload ---
+upload_container = st.sidebar.empty()
+arquivo = None # Inicializa a variável para o caso de não haver arquivo
 
-# Upload do arquivo na barra lateral
-arquivo = st.sidebar.file_uploader(" ", type=["csv"], label_visibility="collapsed")
+# --- Conteúdo da barra lateral inicial (dentro do placeholder) ---
+with upload_container:
+    st.header("📁 Upload de Arquivo")
+    st.markdown(
+        """
+        <p style="font-size:14px; margin-top: -10px; margin-bottom: 10px;">
+        Faça upload do arquivo CSV exportado da Shopee.
+        </p>
+        """,
+        unsafe_allow_html=True
+    )
+    arquivo = st.file_uploader(" ", type=["csv"], label_visibility="collapsed")
 
 # --- Processamento do CSV (só continua se o arquivo for upado) ---
 if arquivo is not None:
+    # Se o arquivo foi upado, esvazia o contêiner de upload e exibe a mensagem de sucesso na barra lateral
+    upload_container.empty()
+    st.sidebar.success(f"✅ Arquivo carregado: **{arquivo.name}**")
+    
     try:
         df = pd.read_csv(arquivo)
-        st.sidebar.success(f"✅ Arquivo carregado: **{arquivo.name}**")
     except Exception as e:
-        st.sidebar.error(f"Erro ao ler o arquivo: {e}")
+        st.error(f"Erro ao ler o arquivo: {e}")
         st.stop()
 
     # --- Conteúdo da Barra Lateral (Filtros) ---
@@ -70,26 +76,33 @@ if arquivo is not None:
     
     # --- Filtros de data separados na barra lateral ---
     st.sidebar.markdown("### 📅 Filtro para Status 'Concluído'")
+    # Usando .max() e .min() para pegar as datas do dataframe e preencher o filtro
+    min_date_concluido = df["Tempo de Conclusão"].min() if pd.notna(df["Tempo de Conclusão"].min()) else pd.Timestamp.now()
+    max_date_concluido = df["Tempo de Conclusão"].max() if pd.notna(df["Tempo de Conclusão"].max()) else pd.Timestamp.now()
+    
     data_inicio_concluido = st.sidebar.date_input(
         "Data de início (Concluído)", 
-        df["Tempo de Conclusão"].min().date() if pd.notna(df["Tempo de Conclusão"].min()) else pd.Timestamp.now().date(),
+        min_date_concluido.date(),
         key="inicio_concluido"
     )
     data_fim_concluido = st.sidebar.date_input(
         "Data de fim (Concluído)", 
-        df["Tempo de Conclusão"].max().date() if pd.notna(df["Tempo de Conclusão"].max()) else pd.Timestamp.now().date(),
+        max_date_concluido.date(),
         key="fim_concluido"
     )
     
     st.sidebar.markdown("### 📅 Filtro para Outros Status")
+    min_date_outros = df["Horário do pedido"].min() if pd.notna(df["Horário do pedido"].min()) else pd.Timestamp.now()
+    max_date_outros = df["Horário do pedido"].max() if pd.notna(df["Horário do pedido"].max()) else pd.Timestamp.now()
+
     data_inicio_outros = st.sidebar.date_input(
         "Data de início (Pendente, Não Pago, Cancelado)", 
-        df["Horário do pedido"].min().date() if pd.notna(df["Horário do pedido"].min()) else pd.Timestamp.now().date(),
+        min_date_outros.date(),
         key="inicio_outros"
     )
     data_fim_outros = st.sidebar.date_input(
         "Data de fim (Pendente, Não Pago, Cancelado)", 
-        df["Horário do pedido"].max().date() if pd.notna(df["Horário do pedido"].max()) else pd.Timestamp.now().date(),
+        max_date_outros.date(),
         key="fim_outros"
     )
     
@@ -98,7 +111,6 @@ if arquivo is not None:
     st.sidebar.markdown("### 🔍 Outros Filtros")
     canal = st.sidebar.multiselect("Canal", df["Canal"].dropna().unique())
     categoria = st.sidebar.multiselect("Categoria Global L2", df["Categoria Global L2"].dropna().unique())
-
 
     # --- Função para filtrar dados ---
     def filtrar_df(df_base, inicio, fim, coluna_data, canal, categoria):
@@ -113,10 +125,13 @@ if arquivo is not None:
             df_filtrado = df_filtrado[df_filtrado["Categoria Global L2"].isin(categoria)]
 
         # Filtro de Data
-        return df_filtrado[
-            (df_filtrado[coluna_data].dt.date >= inicio) &
-            (df_filtrado[coluna_data].dt.date <= fim)
-        ]
+        # A verificação da data é feita apenas se a coluna não tiver valores NaT
+        if not df_filtrado[coluna_data].empty and pd.notna(df_filtrado[coluna_data].iloc[0]):
+            df_filtrado = df_filtrado[
+                (df_filtrado[coluna_data].dt.date >= inicio) &
+                (df_filtrado[coluna_data].dt.date <= fim)
+            ]
+        return df_filtrado
 
     # Dividir o DataFrame por status
     df_concluido_base = df[df["Status do Pedido"].str.contains("conclu", case=False, na=False)]
@@ -151,17 +166,15 @@ if arquivo is not None:
         total = df_status[coluna_comissao].sum()
         valor_formatado = f"R$ {total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         quantidade_formatada = f"Pedidos: {qtd}"
-        quantidade_formatada_diff = f"{qtd}"
         
-        
-        if i == 0:
-            col1.metric(f"📌 {nome}", valor_formatado, quantidade_formatada)
-        elif i == 1:
-            col2.metric(f"📌 {nome}", valor_formatado, quantidade_formatada)
-        elif i == 2:
-            col3.metric(f"📌 {nome}", quantidade_formatada_diff)
-        else:
-            col4.metric(f"📌 {nome}", quantidade_formatada_diff)
+        # Lógica para os diferentes formatos de metric
+        if nome in ["Pendente", "Concluído"]:
+            coluna = [col1, col2][["Pendente", "Concluído"].index(nome)]
+            coluna.metric(f"📌 {nome}", valor_formatado, quantidade_formatada)
+        elif nome in ["Não Pago", "Cancelado"]:
+            coluna = [col3, col4][["Não Pago", "Cancelado"].index(nome)]
+            coluna.metric(f"📌 {nome}", qtd, f"R$ {total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+
 
     st.divider()
 
