@@ -178,7 +178,9 @@ if arquivo is not None:
 
     st.divider()
 
-    # Gráficos principais
+    # ======================
+    # 📈 SEÇÃO: Visualização de Dados (Gráficos)
+    # ======================
     st.subheader("📈 Visualização de Dados")
 
     tipo_grafico = st.radio("Escolha o tipo de gráfico", ["Barras", "Pizza"], horizontal=True)
@@ -186,13 +188,45 @@ if arquivo is not None:
 
     df_agrupado = df_periodo.groupby(agrupamento)[coluna_comissao].sum().reset_index()
 
+    # --- Estilização dos Gráficos ---
     if tipo_grafico == "Barras":
-        fig = px.bar(df_agrupado, x=agrupamento, y=coluna_comissao, title=f"Comissão por {agrupamento}", text_auto=".2s")
-        fig.update_layout(height=500)
+        fig = px.bar(
+            df_agrupado, 
+            x=agrupamento, 
+            y=coluna_comissao, 
+            title=f"Comissão Total por {agrupamento}",
+            labels={agrupamento: agrupamento, coluna_comissao: "Comissão Total (R$)"},
+            # Paleta de cores mais agradável
+            color=agrupamento,
+            color_discrete_sequence=px.colors.qualitative.Plotly,
+            hover_data={coluna_comissao: ":.2f"} # Formatação para o tooltip
+        )
+        # Formatação do eixo Y para moeda
+        fig.update_layout(
+            height=500,
+            yaxis_title="Comissão Total (R$)",
+            yaxis_tickprefix="R$ ",
+            yaxis_tickformat=",.0f"
+        )
+        # Formatação do texto nas barras
+        fig.update_traces(texttemplate='R$%{y:,.2f}', textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
-    else:
-        fig = px.pie(df_agrupado, names=agrupamento, values=coluna_comissao, title=f"Comissão por {agrupamento}")
-        fig.update_traces(textinfo="percent+label")
+    
+    else: # Gráfico de Pizza
+        fig = px.pie(
+            df_agrupado, 
+            names=agrupamento, 
+            values=coluna_comissao, 
+            title=f"Distribuição de Comissão por {agrupamento}",
+            # Paleta de cores mais agradável
+            color_discrete_sequence=px.colors.qualitative.Plotly
+        )
+        # Personalização do texto e tooltip
+        fig.update_traces(
+            textposition="inside", 
+            textinfo="percent+label", 
+            hovertemplate="<b>%{label}</b><br>Comissão: R$ %{value:,.2f}<br>Porcentagem: %{percent}<extra></extra>"
+        )
         fig.update_layout(height=500)
         st.plotly_chart(fig, use_container_width=True)
 
