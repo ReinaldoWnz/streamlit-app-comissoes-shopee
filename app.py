@@ -52,7 +52,6 @@ if arquivo is not None:
 
     # Filtros principais
     st.sidebar.markdown("### 🔍 Filtros")
-    status = st.sidebar.multiselect("Status do Pedido", df["Status do Pedido"].dropna().unique())
     canal = st.sidebar.multiselect("Canal", df["Canal"].dropna().unique())
     categoria = st.sidebar.multiselect("Categoria Global L2", df["Categoria Global L2"].dropna().unique())
 
@@ -69,8 +68,6 @@ if arquivo is not None:
     # Função para filtrar dados
     def filtrar(df, inicio, fim):
         df_filtrado = df.copy()
-        if status:
-            df_filtrado = df_filtrado[df_filtrado["Status do Pedido"].isin(status)]
         if canal:
             df_filtrado = df_filtrado[df_filtrado["Canal"].isin(canal)]
         if categoria:
@@ -111,18 +108,6 @@ if arquivo is not None:
             col3.metric(f"📌 {nome}", qtd, f"R$ {total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
         else:
             col4.metric(f"📌 {nome}", qtd, f"R$ {total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-
-    st.divider()
-
-    # ======================
-    # Métricas principais
-    # ======================
-    total_pedidos = len(df_periodo)
-    total_comissao = df_periodo[coluna_comissao].sum()
-
-    coL2, col2 = st.columns(2)
-    coL2.metric("🧾 Total de Pedidos", total_pedidos)
-    col2.metric("💰 Comissão Total (R$)", f"{total_comissao:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
     st.divider()
 
