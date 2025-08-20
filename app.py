@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from streamlit_image_export import st_image_export_button
+import plotly.io as pio # Importa a biblioteca Plotly IO
+import io # Para manipular dados binários
 
 st.set_page_config(page_title="Análise de Comissões", layout="wide")
 st.title("📊 Painel de Análise de Comissões - Shopee Afiliados")
@@ -232,14 +233,14 @@ if arquivo is not None:
         fig.update_layout(height=500)
         st.plotly_chart(fig, use_container_width=True)
 
-    # Botão de exportação da imagem (fora do contêiner, mas ainda dentro do if)
-    st_image_export_button(
-        "📥 Salvar Painel como Imagem",
-        "painel-principal",
-        filename="painel_analise_shopee",
-        file_format="png",
-        button_label="📥 Salvar Painel como Imagem",
-        key="export_button"
+    img_bytes = pio.to_image(fig, format="png")
+
+    # Criar o botão de download
+    st.download_button(
+        label="📥 Baixar Gráfico como Imagem",
+        data=img_bytes,
+        file_name=f"grafico_{agrupamento.replace(' ', '_').lower()}.png",
+        mime="image/png"
     )
 
 else:
