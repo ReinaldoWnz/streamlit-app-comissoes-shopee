@@ -141,9 +141,9 @@ if arquivo is not None:
         elif i == 1:
             col2.metric(f"📌 {nome}", valor_formatado, quantidade_formatada)
         elif i == 2:
-            col3.metric(f"📌 {nome}", valor_formatado, quantidade_formatada)
+            col3.metric(f"📌 {nome}", quantidade_formatada)
         else:
-            col4.metric(f"📌 {nome}", valor_formatado, quantidade_formatada)
+            col4.metric(f"📌 {nome}", quantidade_formatada)
     
     st.divider()
 
