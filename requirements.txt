@@ -3,3 +3,4 @@ pandas
 matplotlib
 tabulate
 plotly
+streamlit-image-export
