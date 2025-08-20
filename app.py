@@ -178,7 +178,7 @@ if arquivo is not None:
     col4, col5, col6 = st.columns([1, 1, 1])
     col4.metric("📌 Pendente", valor_pendente_formatado, f"Pedidos: {len(status_resumo['Pendente'])}")
     col5.metric("📌 Total Estimado Líquido", valor_estimado_liquido_formatado, help="Soma dos valores Pendentes e Concluídos com 11% subtraído.")
-    col6.metric("📌 Cancelado", f"{len(status_resumo['Cancelado'])} pedidos", f"Valor: R$ {status_resumo['Cancelado'][coluna_comissao].sum():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+    col6.metric("📌 Cancelado", f"{len(status_resumo['Cancelado'])} pedidos")
 
     st.divider()
 
