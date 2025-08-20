@@ -156,24 +156,28 @@ if arquivo is not None:
         "Cancelado": df_periodo[df_periodo["Status do Pedido"].str.contains("cancel", case=False, na=False)],
     }
     
-    # Calcular o valor total estimado (Concluído + Pendente)
+    # Calcular os totais
     total_pendente = status_resumo["Pendente"][coluna_comissao].sum()
     total_concluido = status_resumo["Concluído"][coluna_comissao].sum()
     total_estimado = total_pendente + total_concluido
+    total_estimado_liquido = total_estimado * 0.89  # Subtrai 11%
 
-    # Formatar o valor total estimado
+    # Formatar os valores
+    valor_concluido_formatado = f"R$ {total_concluido:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    valor_pendente_formatado = f"R$ {total_pendente:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     valor_estimado_formatado = f"R$ {total_estimado:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    valor_estimado_liquido_formatado = f"R$ {total_estimado_liquido:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     
-    # Ajustar as colunas para incluir o novo card
-    col1, col2, col3, col4, col5 = st.columns(5)
-    
-    # Exibir os cards de métricas
-    col1.metric("📌 Concluído", f"R$ {total_concluido:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), f"Pedidos: {len(status_resumo['Concluído'])}")
-    col2.metric("📌 Pendente", f"R$ {total_pendente:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), f"Pedidos: {len(status_resumo['Pendente'])}")
-    col3.metric("📌 Total Estimado", valor_estimado_formatado, help="Soma do valor total de comissões Pendentes e Concluídas.")
-    col4.metric("📌 Não Pago", len(status_resumo["Não Pago"]), f"R$ {status_resumo['Não Pago'][coluna_comissao].sum():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-    col5.metric("📌 Cancelado", len(status_resumo["Cancelado"]), f"R$ {status_resumo['Cancelado'][coluna_comissao].sum():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+    # Exibir a primeira linha de cartões (principais)
+    col1, col2, col3 = st.columns(3)
+    col1.metric("📌 Concluído", valor_concluido_formatado, f"Pedidos: {len(status_resumo['Concluído'])}")
+    col2.metric("📌 Pendente", valor_pendente_formatado, f"Pedidos: {len(status_resumo['Pendente'])}")
+    col3.metric("📌 Total Estimado Líquido", valor_estimado_liquido_formatado, help="Soma dos valores Pendentes e Concluídos com 11% subtraído.")
 
+    # Exibir a segunda linha de cartões (secundários)
+    col_vazio, col4, col5 = st.columns([1, 1, 1])
+    col4.metric("📌 Não Pago", f"{len(status_resumo['Não Pago'])} pedidos", f"Valor: R$ {status_resumo['Não Pago'][coluna_comissao].sum():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+    col5.metric("📌 Cancelado", f"{len(status_resumo['Cancelado'])} pedidos", f"Valor: R$ {status_resumo['Cancelado'][coluna_comissao].sum():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
     st.divider()
 
