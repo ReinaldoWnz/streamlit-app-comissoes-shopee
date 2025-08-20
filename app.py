@@ -172,7 +172,7 @@ if arquivo is not None:
     col1, col2, col3 = st.columns(3)
     col1.metric("📌 Concluído", valor_concluido_formatado, f"Pedidos: {len(status_resumo['Concluído'])}")
     col2.metric("📌 Total Estimado", valor_estimado_formatado, help="Soma dos valores Pendentes e Concluídos.")
-    col3.metric("📌 Não Pago", f"{len(status_resumo['Não Pago'])} pedidos", f"Valor: R$ {status_resumo['Não Pago'][coluna_comissao].sum():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+    col3.metric("📌 Não Pago", f"{len(status_resumo['Não Pago'])} pedidos")
 
     # Exibir a segunda linha de cartões (secundários)
     col4, col5, col6 = st.columns([1, 1, 1])
