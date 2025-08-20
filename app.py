@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from streamlit_image_export import st_image_export_button  # Importação da biblioteca
+import streamlit_image_export   # Importação da biblioteca
 
 st.set_page_config(page_title="Análise de Comissões", layout="wide")
 st.title("📊 Painel de Análise de Comissões - Shopee Afiliados")
