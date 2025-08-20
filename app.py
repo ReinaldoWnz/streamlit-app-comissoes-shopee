@@ -5,24 +5,23 @@ import plotly.express as px
 st.set_page_config(page_title="Análise de Comissões", layout="wide")
 st.title("📊 Painel de Análise de Comissões - Shopee Afiliados")
 
-# --- Upload do CSV menor e mais discreto ---
-col1, col2, col3 = st.columns([1,2,1])
+# --- Texto + Upload lado a lado ---
+col1, col2 = st.columns([4,1])  # proporção: texto maior, botão menor
 
-with col2:
+with col1:
     st.markdown(
         """
-        <div style="text-align: center; padding: 10px; border-radius: 10px; 
-                    background-color: #f8f9fa; box-shadow: 0 1px 4px rgba(0,0,0,0.1);">
-            <h5 style="margin: 0;">📂 Upload do Relatório</h5>
-            <p style="font-size: 12px; color: #666; margin: 2px 0 8px;">
-                CSV exportado da Shopee
-            </p>
-        </div>
+        <p style="font-size:14px; margin-top: 8px;">
+        📂 Faça upload do arquivo <b>CSV exportado da Shopee</b>
+        </p>
         """,
         unsafe_allow_html=True
     )
+
+with col2:
     arquivo = st.file_uploader("", type=["csv"], label_visibility="collapsed")
 
+# --- Processamento do CSV ---
 if arquivo is not None:
     try:
         df = pd.read_csv(arquivo)
