@@ -135,15 +135,17 @@ if arquivo is not None:
         # Formatação do valor para exibir a moeda e a quantidade
         valor_formatado = f"R$ {total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         quantidade_formatada = f"Pedidos: {qtd}" # Adicionado "Pedidos:" para clareza
+        quantidade_formatada_diff = f"{qtd}" # Apenas para Não pago e cancelado
+
     
         if i == 0:
             col1.metric(f"📌 {nome}", valor_formatado, quantidade_formatada)
         elif i == 1:
             col2.metric(f"📌 {nome}", valor_formatado, quantidade_formatada)
         elif i == 2:
-            col3.metric(f"📌 {nome}", quantidade_formatada)
+            col3.metric(f"📌 {nome}", quantidade_formatada_diff)
         else:
-            col4.metric(f"📌 {nome}", quantidade_formatada)
+            col4.metric(f"📌 {nome}", quantidade_formatada_diff)
     
     st.divider()
 
