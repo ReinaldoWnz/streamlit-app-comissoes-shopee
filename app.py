@@ -19,7 +19,7 @@ st.markdown(
 
 # --- Criar um placeholder para o contêiner de upload ---
 upload_container = st.sidebar.empty()
-arquivo = None # Inicializa a variável para o caso de não haver arquivo
+arquivo = None
 
 # --- Conteúdo da barra lateral inicial (dentro do placeholder) ---
 with upload_container:
@@ -38,7 +38,7 @@ with upload_container:
 if arquivo is not None:
     # Se o arquivo foi upado, esvazia o contêiner de upload e exibe a mensagem de sucesso na barra lateral
     upload_container.empty()
-    st.sidebar.success(f"✅ Arquivo carregado")
+    st.sidebar.success(f"✅ Arquivo carregado: **{arquivo.name}**")
     
     try:
         df = pd.read_csv(arquivo)
@@ -76,7 +76,6 @@ if arquivo is not None:
     
     # --- Filtros de data separados na barra lateral ---
     st.sidebar.markdown("### 📅 Filtro para Status 'Concluído'")
-    # Usando .max() e .min() para pegar as datas do dataframe e preencher o filtro
     min_date_concluido = df["Tempo de Conclusão"].min() if pd.notna(df["Tempo de Conclusão"].min()) else pd.Timestamp.now()
     max_date_concluido = df["Tempo de Conclusão"].max() if pd.notna(df["Tempo de Conclusão"].max()) else pd.Timestamp.now()
     
@@ -116,16 +115,12 @@ if arquivo is not None:
     def filtrar_df(df_base, inicio, fim, coluna_data, canal, categoria):
         df_filtrado = df_base.copy()
         
-        # Filtro de Canal
         if canal:
             df_filtrado = df_filtrado[df_filtrado["Canal"].isin(canal)]
         
-        # Filtro de Categoria
         if categoria:
             df_filtrado = df_filtrado[df_filtrado["Categoria Global L2"].isin(categoria)]
 
-        # Filtro de Data
-        # A verificação da data é feita apenas se a coluna não tiver valores NaT
         if not df_filtrado[coluna_data].empty and pd.notna(df_filtrado[coluna_data].iloc[0]):
             df_filtrado = df_filtrado[
                 (df_filtrado[coluna_data].dt.date >= inicio) &
@@ -153,34 +148,36 @@ if arquivo is not None:
     # ======================
     st.subheader("📌 Resumo por Status")
 
+    # Mapeamento e filtragem dos DataFrames por status
     status_resumo = {
         "Pendente": df_periodo[df_periodo["Status do Pedido"].str.contains("endente", case=False, na=False)],
         "Concluído": df_periodo[df_periodo["Status do Pedido"].str.contains("conclu", case=False, na=False)],
         "Não Pago": df_periodo[df_periodo["Status do Pedido"].str.contains("não pago|nao pago", case=False, na=False)],
         "Cancelado": df_periodo[df_periodo["Status do Pedido"].str.contains("cancel", case=False, na=False)],
     }
+    
+    # Calcular o valor total estimado (Concluído + Pendente)
+    total_pendente = status_resumo["Pendente"][coluna_comissao].sum()
+    total_concluido = status_resumo["Concluído"][coluna_comissao].sum()
+    total_estimado = total_pendente + total_concluido
 
-    col1, col2, col3, col4 = st.columns(4)
-    for i, (nome, df_status) in enumerate(status_resumo.items()):
-        qtd = len(df_status)
-        total = df_status[coluna_comissao].sum()
-        valor_formatado = f"R$ {total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-        quantidade_formatada = f"Pedidos: {qtd}"
-        
-        # Lógica para os diferentes formatos de metric
-        if nome in ["Pendente", "Concluído"]:
-            coluna = [col1, col2][["Pendente", "Concluído"].index(nome)]
-            coluna.metric(f"📌 {nome}", valor_formatado, quantidade_formatada)
-        elif nome in ["Não Pago", "Cancelado"]:
-            coluna = [col3, col4][["Não Pago", "Cancelado"].index(nome)]
-            coluna.metric(f"📌 {nome}", qtd, f"R$ {total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+    # Formatar o valor total estimado
+    valor_estimado_formatado = f"R$ {total_estimado:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    
+    # Ajustar as colunas para incluir o novo card
+    col1, col2, col3, col4, col5 = st.columns(5)
+    
+    # Exibir os cards de métricas
+    col1.metric("📌 Concluído", f"R$ {total_concluido:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), f"Pedidos: {len(status_resumo['Concluído'])}")
+    col2.metric("📌 Pendente", f"R$ {total_pendente:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), f"Pedidos: {len(status_resumo['Pendente'])}")
+    col3.metric("📌 Total Estimado", valor_estimado_formatado, help="Soma do valor total de comissões Pendentes e Concluídas.")
+    col4.metric("📌 Não Pago", len(status_resumo["Não Pago"]), f"R$ {status_resumo['Não Pago'][coluna_comissao].sum():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+    col5.metric("📌 Cancelado", len(status_resumo["Cancelado"]), f"R$ {status_resumo['Cancelado'][coluna_comissao].sum():,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
 
     st.divider()
 
-    # ======================
-    # 📈 SEÇÃO: Visualização de Dados (Gráficos)
-    # ======================
+    # Gráficos principais
     st.subheader("📈 Visualização de Dados")
 
     tipo_grafico = st.radio("Escolha o tipo de gráfico", ["Barras", "Pizza"], horizontal=True)
@@ -196,19 +193,16 @@ if arquivo is not None:
             y=coluna_comissao, 
             title=f"Comissão Total por {agrupamento}",
             labels={agrupamento: agrupamento, coluna_comissao: "Comissão Total (R$)"},
-            # Paleta de cores mais agradável
             color=agrupamento,
             color_discrete_sequence=px.colors.qualitative.Plotly,
-            hover_data={coluna_comissao: ":.2f"} # Formatação para o tooltip
+            hover_data={coluna_comissao: ":.2f"}
         )
-        # Formatação do eixo Y para moeda
         fig.update_layout(
             height=500,
             yaxis_title="Comissão Total (R$)",
             yaxis_tickprefix="R$ ",
             yaxis_tickformat=",.0f"
         )
-        # Formatação do texto nas barras
         fig.update_traces(texttemplate='R$%{y:,.2f}', textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
     
@@ -218,10 +212,8 @@ if arquivo is not None:
             names=agrupamento, 
             values=coluna_comissao, 
             title=f"Distribuição de Comissão por {agrupamento}",
-            # Paleta de cores mais agradável
             color_discrete_sequence=px.colors.qualitative.Plotly
         )
-        # Personalização do texto e tooltip
         fig.update_traces(
             textposition="inside", 
             textinfo="percent+label", 
