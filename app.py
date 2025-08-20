@@ -240,6 +240,7 @@ if arquivo is not None:
         file_format="png",
         button_label="📥 Salvar Painel como Imagem",
         key="export_button"
+    )
 
 else:
     # Mensagem de instrução quando nenhum arquivo é upado
