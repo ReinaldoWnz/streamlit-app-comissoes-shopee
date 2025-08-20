@@ -151,6 +151,8 @@ if arquivo is not None:
         total = df_status[coluna_comissao].sum()
         valor_formatado = f"R$ {total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         quantidade_formatada = f"Pedidos: {qtd}"
+        quantidade_formatada_diff = f"{qtd}"
+        
         
         if i == 0:
             col1.metric(f"📌 {nome}", valor_formatado, quantidade_formatada)
