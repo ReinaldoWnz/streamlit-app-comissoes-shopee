@@ -5,12 +5,24 @@ import plotly.express as px
 st.set_page_config(page_title="Análise de Comissões", layout="wide")
 st.title("📊 Painel de Análise de Comissões - Shopee Afiliados")
 
-# Upload do CSV
-arquivo = st.file_uploader("Faça upload do relatório CSV da Shopee", type=["csv"])
+# --- Upload do CSV ---
+st.markdown(
+    """
+    <div style="text-align: center; padding: 25px; border-radius: 12px; 
+                background-color: #f8f9fa; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <h4 style="margin-bottom: 10px;">📂 Carregar Relatório Shopee</h4>
+        <p style="color: #666; font-size: 14px; margin-top: -5px;">Faça upload do arquivo CSV exportado do painel da Shopee</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+arquivo = st.file_uploader("", type=["csv"], label_visibility="collapsed")
 
 if arquivo is not None:
     try:
         df = pd.read_csv(arquivo)
+        st.success(f"✅ Arquivo carregado: **{arquivo.name}**")
     except Exception as e:
         st.error(f"Erro ao ler o arquivo: {e}")
         st.stop()
