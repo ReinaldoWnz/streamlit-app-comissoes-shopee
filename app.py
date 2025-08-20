@@ -17,23 +17,21 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- Texto + Upload lado a lado ---
-col1, col2 = st.columns([4,1])
+# --- Barra Lateral ---
+st.sidebar.header("📁 Upload de Arquivo")
+st.sidebar.markdown(
+    """
+    <p style="font-size:14px; margin-top: -10px; margin-bottom: 10px;">
+    Faça upload do arquivo CSV exportado da Shopee.
+    </p>
+    """,
+    unsafe_allow_html=True
+)
 
-with col1:
-    st.markdown(
-        """
-        <p style="font-size:14px; margin-top: 8px;">
-        📂 Faça upload do arquivo <b>CSV exportado da Shopee</b>
-        </p>
-        """,
-        unsafe_allow_html=True
-    )
+# Upload do arquivo na barra lateral
+arquivo = st.sidebar.file_uploader(" ", type=["csv"], label_visibility="collapsed")
 
-with col2:
-    arquivo = st.file_uploader("", type=["csv"], label_visibility="collapsed")
-
-# --- Processamento do CSV ---
+# --- Processamento do CSV (só continua se o arquivo for upado) ---
 if arquivo is not None:
     try:
         df = pd.read_csv(arquivo)
@@ -42,6 +40,11 @@ if arquivo is not None:
         st.error(f"Erro ao ler o arquivo: {e}")
         st.stop()
 
+    # --- Conteúdo da Barra Lateral (Filtros) ---
+    st.sidebar.markdown("---")
+    st.sidebar.header("🔍 Filtros de Análise")
+
+    # O resto do seu código de filtros e visualização fica aqui dentro
     # Escolha do tipo de data para análise
     tipo_data = st.sidebar.radio(
         "📅 Escolher tipo de data para filtro",
@@ -92,6 +95,7 @@ if arquivo is not None:
         data_inicio_comp = st.sidebar.date_input("Início (comparação)", df[tipo_data].min().date(), key="inicio_comp")
         data_fim_comp = st.sidebar.date_input("Fim (comparação)", df[tipo_data].max().date(), key="fim_comp")
 
+    # --- Conteúdo da Página Principal (Gráficos e Métricas) ---
     # Função para filtrar dados
     def filtrar(df, inicio, fim):
         df_filtrado = df.copy()
@@ -181,3 +185,6 @@ if arquivo is not None:
             )
             fig_comp.update_layout(height=500)
             st.plotly_chart(fig_comp, use_container_width=True)
+else:
+    # Mensagem de instrução quando nenhum arquivo é upado
+    st.info("⬆️ **Por favor, faça o upload de um arquivo CSV da Shopee na barra lateral para começar a análise.**")
