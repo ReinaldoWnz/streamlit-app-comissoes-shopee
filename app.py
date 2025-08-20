@@ -5,19 +5,23 @@ import plotly.express as px
 st.set_page_config(page_title="Análise de Comissões", layout="wide")
 st.title("📊 Painel de Análise de Comissões - Shopee Afiliados")
 
-# --- Upload do CSV ---
-st.markdown(
-    """
-    <div style="text-align: center; padding: 25px; border-radius: 12px; 
-                background-color: #f8f9fa; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        <h4 style="margin-bottom: 10px;">📂 Carregar Relatório Shopee</h4>
-        <p style="color: #666; font-size: 14px; margin-top: -5px;">Faça upload do arquivo CSV exportado do painel da Shopee</p>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+# --- Upload do CSV menor e mais discreto ---
+col1, col2, col3 = st.columns([1,2,1])
 
-arquivo = st.file_uploader("", type=["csv"], label_visibility="collapsed")
+with col2:
+    st.markdown(
+        """
+        <div style="text-align: center; padding: 10px; border-radius: 10px; 
+                    background-color: #f8f9fa; box-shadow: 0 1px 4px rgba(0,0,0,0.1);">
+            <h5 style="margin: 0;">📂 Upload do Relatório</h5>
+            <p style="font-size: 12px; color: #666; margin: 2px 0 8px;">
+                CSV exportado da Shopee
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    arquivo = st.file_uploader("", type=["csv"], label_visibility="collapsed")
 
 if arquivo is not None:
     try:
