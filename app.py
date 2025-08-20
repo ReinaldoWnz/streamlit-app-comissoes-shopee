@@ -115,32 +115,37 @@ if arquivo is not None:
         st.warning("Nenhum dado encontrado no período principal com os filtros selecionados.")
         st.stop()
 
-    # ======================
-    # 🔹 NOVA SEÇÃO: Resumo por Status
-    # ======================
-    st.subheader("📌 Resumo por Status")
+   # ======================
+# 🔹 NOVA SEÇÃO: Resumo por Status
+# ======================
+st.subheader("📌 Resumo por Status")
 
-    status_resumo = {
-        "Pendente": df_periodo[df_periodo["Status do Pedido"].str.contains("endente", case=False, na=False)],
-        "Concluído": df_periodo[df_periodo["Status do Pedido"].str.contains("conclu", case=False, na=False)],
-        "Não Pago": df_periodo[df_periodo["Status do Pedido"].str.contains("não pago|nao pago", case=False, na=False)],
-        "Cancelado": df_periodo[df_periodo["Status do Pedido"].str.contains("cancel", case=False, na=False)],
-    }
+status_resumo = {
+    "Pendente": df_periodo[df_periodo["Status do Pedido"].str.contains("endente", case=False, na=False)],
+    "Concluído": df_periodo[df_periodo["Status do Pedido"].str.contains("conclu", case=False, na=False)],
+    "Não Pago": df_periodo[df_periodo["Status do Pedido"].str.contains("não pago|nao pago", case=False, na=False)],
+    "Cancelado": df_periodo[df_periodo["Status do Pedido"].str.contains("cancel", case=False, na=False)],
+}
 
-    col1, col2, col3, col4 = st.columns(4)
-    for i, (nome, df_status) in enumerate(status_resumo.items()):
-        qtd = len(df_status)
-        total = df_status[coluna_comissao].sum()
-        if i == 0:
-            col1.metric(f"📌 {nome}", qtd, f"R$ {total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-        elif i == 1:
-            col2.metric(f"📌 {nome}", qtd, f"R$ {total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-        elif i == 2:
-            col3.metric(f"📌 {nome}", qtd, f"R$ {total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-        else:
-            col4.metric(f"📌 {nome}", qtd, f"R$ {total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+col1, col2, col3, col4 = st.columns(4)
+for i, (nome, df_status) in enumerate(status_resumo.items()):
+    qtd = len(df_status)
+    total = df_status[coluna_comissao].sum()
 
-    st.divider()
+    # Formatação do valor para exibir a moeda e a quantidade
+    valor_formatado = f"R$ {total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    quantidade_formatada = f"Pedidos: {qtd}" # Adicionado "Pedidos:" para clareza
+
+    if i == 0:
+        col1.metric(f"📌 {nome}", valor_formatado, quantidade_formatada)
+    elif i == 1:
+        col2.metric(f"📌 {nome}", valor_formatado, quantidade_formatada)
+    elif i == 2:
+        col3.metric(f"📌 {nome}", valor_formatado, quantidade_formatada)
+    else:
+        col4.metric(f"📌 {nome}", valor_formatado, quantidade_formatada)
+
+st.divider()
 
     # Gráficos principais
     st.subheader("📈 Visualização de Dados")
