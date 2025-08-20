@@ -38,7 +38,7 @@ with upload_container:
 if arquivo is not None:
     # Se o arquivo foi upado, esvazia o contêiner de upload e exibe a mensagem de sucesso na barra lateral
     upload_container.empty()
-    st.sidebar.success(f"✅ Arquivo carregado: **{arquivo.name}**")
+    st.sidebar.success(f"✅ Arquivo carregado")
     
     try:
         df = pd.read_csv(arquivo)
