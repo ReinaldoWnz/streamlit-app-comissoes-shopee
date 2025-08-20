@@ -167,6 +167,10 @@ if arquivo is not None:
     valor_pendente_formatado = f"R$ {total_pendente:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     valor_estimado_formatado = f"R$ {total_estimado:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     valor_estimado_liquido_formatado = f"R$ {total_estimado_liquido:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+    # Formatar as datas para o rótulo
+    data_concluido_str = f"({data_inicio_concluido.strftime('%d/%m/%Y')} a {data_fim_concluido.strftime('%d/%m/%Y')})"
+    data_outros_str = f"({data_inicio_outros.strftime('%d/%m/%Y')} a {data_fim_outros.strftime('%d/%m/%Y')})"
     
     # Exibir a primeira linha de cartões (principais)
     col1, col2, col3 = st.columns(3)
