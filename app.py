@@ -246,8 +246,11 @@ if arquivo is not None:
         top_itens = df_periodo.groupby(["ID do item", "Nome do Item"])["Qtd"].sum().nlargest(10).reset_index()
     
         if not top_itens.empty:
+            # Seleciona apenas as colunas 'Nome do Item' e 'Qtd' para a tabela
+            tabela_para_exibir = top_itens[["Nome do Item", "Qtd"]]
+            
             # Renomeia as colunas para melhor visualização na tabela
-            tabela_para_exibir = top_itens.rename(columns={"Nome do Item": "Produto", "Qtd": "Quantidade Vendida"})
+            tabela_para_exibir = tabela_para_exibir.rename(columns={"Nome do Item": "Produto", "Qtd": "Quantidade Vendida"})
             
             # Cria o botão que abre o pop-up
             with st.popover("Clique para ver o Top 10 Produtos"):
