@@ -239,12 +239,12 @@ if arquivo is not None:
     st.subheader("🛍️ Top 10 Itens Mais Comprados")
     
     # Verifica se o DataFrame e as colunas necessárias existem
-    colunas_necessarias = ["ID do item", "Nome do Item", "Quantidade"]
+    colunas_necessarias = ["ID do item", "Nome do Item", "Qtd"]
     if df_periodo.empty or not all(coluna in df_periodo.columns for coluna in colunas_necessarias):
-        st.warning("Dados de produtos não disponíveis ou colunas 'ID do item', 'Nome do Item' e/ou 'Quantidade' não encontradas no arquivo.")
+        st.warning("Dados de produtos não disponíveis ou colunas 'ID do item', 'Nome do Item' e/ou 'Qtd' não encontradas no arquivo.")
     else:
         # Agrupa os dados por ID e Nome do Item e soma a quantidade
-        top_itens = df_periodo.groupby(["ID do item", "Nome do Item"])["Quantidade"].sum().nlargest(10).reset_index()
+        top_itens = df_periodo.groupby(["ID do item", "Nome do Item"])["Qtd"].sum().nlargest(10).reset_index()
     
         if not top_itens.empty:
             # Cria uma coluna com a combinação de ID e Nome para o eixo y do gráfico
@@ -253,11 +253,11 @@ if arquivo is not None:
             # Cria o gráfico de barras horizontais
             fig_top_itens = px.bar(
                 top_itens, 
-                x="Quantidade", 
+                x="Qtd", 
                 y="Item",
                 orientation='h',
                 title="Ranking dos 10 Itens Mais Vendidos por Quantidade",
-                labels={"Quantidade": "Quantidade Vendida", "Item": "Item"},
+                labels={"Qtd": "Quantidade Vendida", "Item": "Item"},
                 color_discrete_sequence=px.colors.qualitative.Plotly
             )
             
@@ -268,7 +268,7 @@ if arquivo is not None:
             
             # Opcional: Mostrar a tabela também
             with st.expander("Ver dados em tabela"):
-                st.table(top_itens.rename(columns={"ID do item": "ID", "Nome do Item": "Nome do Item", "Quantidade": "Quantidade Vendida"}))
+                st.table(top_itens.rename(columns={"ID do item": "ID", "Nome do Item": "Nome do Item", "Qtd": "Quantidade Vendida"}))
     
         else:
             st.info("Nenhum item encontrado com os filtros selecionados.")
