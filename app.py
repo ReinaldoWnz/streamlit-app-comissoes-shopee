@@ -233,10 +233,9 @@ if arquivo is not None:
         st.plotly_chart(fig, use_container_width=True)
 
     # ============================================
-    # 🛍️ SEÇÃO: Top 10 Itens Mais Comprados
+    # 🛍️ SEÇÃO: Top 10 Itens Mais Comprados (em um pop-up)
     # ============================================
     st.divider()
-    st.subheader("🛍️ Top 10 Itens Mais Comprados")
     
     # Verifica se o DataFrame e as colunas necessárias existem
     colunas_necessarias = ["ID do item", "Nome do Item", "Qtd"]
@@ -247,13 +246,14 @@ if arquivo is not None:
         top_itens = df_periodo.groupby(["ID do item", "Nome do Item"])["Qtd"].sum().nlargest(10).reset_index()
     
         if not top_itens.empty:
-            # Seleciona apenas as colunas 'Nome do Item' e 'Qtd' para a tabela
-            tabela_para_exibir = top_itens[["Nome do Item", "Qtd"]]
-            
             # Renomeia as colunas para melhor visualização na tabela
-            tabela_para_exibir = tabela_para_exibir.rename(columns={"Nome do Item": "Produto", "Qtd": "Quantidade Vendida"})
+            tabela_para_exibir = top_itens.rename(columns={"Nome do Item": "Produto", "Qtd": "Quantidade Vendida"})
             
-            st.table(tabela_para_exibir)
+            # Cria o botão que abre o pop-up
+            with st.popover("Clique para ver o Top 10 Produtos"):
+                st.subheader("🛍️ Top 10 Produtos Mais Comprados")
+                # Exibe a tabela dentro do pop-up
+                st.table(tabela_para_exibir)
         else:
             st.info("Nenhum item encontrado com os filtros selecionados.")
 else:
