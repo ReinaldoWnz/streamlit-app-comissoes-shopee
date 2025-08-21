@@ -232,8 +232,6 @@ if arquivo is not None:
         fig.update_layout(height=500)
         st.plotly_chart(fig, use_container_width=True)
 
-    img_bytes = pio.to_image(fig, format="png")
-
     # ============================================
     # 🛍️ SEÇÃO: Top 10 Itens Mais Comprados
     # ============================================
