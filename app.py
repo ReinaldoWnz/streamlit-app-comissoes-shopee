@@ -233,7 +233,46 @@ if arquivo is not None:
 
     img_bytes = pio.to_image(fig, format="png")
 
-
+    # ============================================
+    # 🛍️ SEÇÃO: Top 10 Itens Mais Comprados
+    # ============================================
+    st.divider()
+    st.subheader("🛍️ Top 10 Itens Mais Comprados")
+    
+    # Verifica se o DataFrame e as colunas necessárias existem
+    colunas_necessarias = ["ID do item", "Nome do Item", "Quantidade"]
+    if df_periodo.empty or not all(coluna in df_periodo.columns for coluna in colunas_necessarias):
+        st.warning("Dados de produtos não disponíveis ou colunas 'ID do item', 'Nome do Item' e/ou 'Quantidade' não encontradas no arquivo.")
+    else:
+        # Agrupa os dados por ID e Nome do Item e soma a quantidade
+        top_itens = df_periodo.groupby(["ID do item", "Nome do Item"])["Quantidade"].sum().nlargest(10).reset_index()
+    
+        if not top_itens.empty:
+            # Cria uma coluna com a combinação de ID e Nome para o eixo y do gráfico
+            top_itens["Item"] = top_itens["ID do item"].astype(str) + " - " + top_itens["Nome do Item"]
+    
+            # Cria o gráfico de barras horizontais
+            fig_top_itens = px.bar(
+                top_itens, 
+                x="Quantidade", 
+                y="Item",
+                orientation='h',
+                title="Ranking dos 10 Itens Mais Vendidos por Quantidade",
+                labels={"Quantidade": "Quantidade Vendida", "Item": "Item"},
+                color_discrete_sequence=px.colors.qualitative.Plotly
+            )
+            
+            # Inverte a ordem para que o primeiro lugar fique no topo
+            fig_top_itens.update_layout(yaxis={'categoryorder':'total ascending'})
+            
+            st.plotly_chart(fig_top_itens, use_container_width=True)
+            
+            # Opcional: Mostrar a tabela também
+            with st.expander("Ver dados em tabela"):
+                st.table(top_itens.rename(columns={"ID do item": "ID", "Nome do Item": "Nome do Item", "Quantidade": "Quantidade Vendida"}))
+    
+        else:
+            st.info("Nenhum item encontrado com os filtros selecionados.")
 else:
     # Mensagem de instrução quando nenhum arquivo é upado
     st.info("⬆️ **Por favor, faça o upload de um arquivo CSV da Shopee na barra lateral para começar a análise.**")
