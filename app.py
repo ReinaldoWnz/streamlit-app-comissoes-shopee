@@ -244,7 +244,7 @@ if arquivo is not None:
         st.warning("Dados de produtos não disponíveis ou colunas 'ID do item', 'Nome do Item' e/ou 'Qtd' não encontradas no arquivo.")
     else:
         # Agrupa os dados por ID e Nome do Item e soma a quantidade
-        top_itens = df_periodo.groupby(["ID do item", "Nome do Item"])["Qtd"].sum().nlargest(10).reset_index()
+        top_itens = df_periodo.groupby(["ID do item", "Nome do Item"])["Qtd"].sum().nlargest(50).reset_index()
     
         if not top_itens.empty:
             # Cria uma coluna com a combinação de ID e Nome para o eixo y do gráfico
