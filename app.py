@@ -266,9 +266,14 @@ if arquivo is not None:
             
             st.plotly_chart(fig_top_itens, use_container_width=True)
             
-            # Opcional: Mostrar a tabela também
             with st.expander("Ver dados em tabela"):
-                st.table(top_itens.rename(columns={"ID do item": "ID", "Nome do Item": "Nome do Item", "Qtd": "Quantidade Vendida"}))
+                # Seleciona apenas as colunas 'Nome do Item' e 'Qtd' do DataFrame
+                tabela_para_exibir = top_itens[["Nome do Item", "Qtd"]]
+                
+                # Renomeia as colunas para melhor visualização na tabela
+                tabela_para_exibir = tabela_para_exibir.rename(columns={"Nome do Item": "Produto", "Qtd": "Quantidade Vendida"})
+                
+                st.table(tabela_para_exibir)
     
         else:
             st.info("Nenhum item encontrado com os filtros selecionados.")
