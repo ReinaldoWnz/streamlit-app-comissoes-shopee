@@ -246,26 +246,6 @@ if arquivo is not None:
         # Agrupa os dados por ID e Nome do Item e soma a quantidade
         top_itens = df_periodo.groupby(["ID do item", "Nome do Item"])["Qtd"].sum().nlargest(10).reset_index()
     
-        if not top_itens.empty:
-            # Cria uma coluna com a combinação de ID e Nome para o eixo y do gráfico
-            top_itens["Item"] = top_itens["ID do item"].astype(str) + " - " + top_itens["Nome do Item"]
-    
-            # Cria o gráfico de barras horizontais
-            fig_top_itens = px.bar(
-                top_itens, 
-                x="Qtd", 
-                y="Item",
-                orientation='h',
-                title="Ranking dos 10 Itens Mais Vendidos por Quantidade",
-                labels={"Qtd": "Quantidade Vendida", "Item": "Item"},
-                color_discrete_sequence=px.colors.qualitative.Plotly
-            )
-            
-            # Inverte a ordem para que o primeiro lugar fique no topo
-            fig_top_itens.update_layout(yaxis={'categoryorder':'total ascending'})
-            
-            st.plotly_chart(fig_top_itens, use_container_width=True)
-            
             with st.expander("Ver dados em tabela"):
                 # Seleciona apenas as colunas 'Nome do Item' e 'Qtd' do DataFrame
                 tabela_para_exibir = top_itens[["Nome do Item", "Qtd"]]
